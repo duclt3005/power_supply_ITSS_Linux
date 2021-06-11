@@ -227,7 +227,6 @@ void connectMng_handle()
 			tprintf("A device connected, connectMng forked new process powerSupply --- pid: %d.\n", powerSupply);
 		}
 	} //end communication
-
 	close(listen_sock);
 } //end function connectMng_handle
 
@@ -262,7 +261,6 @@ void powSupplyInfoAccess_handle()
 			tprintf("msgrcv() error");
 			exit(1);
 		}
-
 		// header = 'n' => Create new device
 		if (got_msg.mtext[0] == 'n')
 		{
@@ -337,14 +335,16 @@ void powSupplyInfoAccess_handle()
 		if (got_msg.mtext[0] == 'd')
 		{
 			int no, temp_pid;
-			sscanf(got_msg.mtext, "%*c|%d|", &temp_pid);
+			sscanf(got_msg.mtext, "%*c|%d|", &temp_pid, &no);
 
 			// send message to logWrite
 			msg_t new_msg;
 			new_msg.mtype = 1;
 			char temp[MAX_MESSAGE_LENGTH_TEMP];
 
-			sprintf(temp, "Device [%s] disconnected", devices[no].name);
+			// printf("----%d--%d", no, devices[no].pid);
+			// printf("Device %d and %d and  %s disconnected\n", temp_pid, no, devices[no].name);
+			// sprintf(temp, "Device [%s] disconnected", devices[no].name);
 
 			for (no = 0; no < MAX_DEVICE; no++)
 			{
