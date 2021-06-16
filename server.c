@@ -119,7 +119,7 @@ void powerSupply_handle(int conn_sock)
 			// send message to powSupplyInfoAccess
 			msg_t new_msg;
 			new_msg.mtype = 2;
-			sprintf(new_msg.mtext, "d|%d|", getpid()); // n for DISS
+			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DISS
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
 			powerSupply_count--;
@@ -270,35 +270,38 @@ void powSupplyInfoAccess_handle()
 				if (devices[no].pid == 0)
 					break;
 			}
-			sscanf(got_msg.mtext, "%*c|%d|%[^|]|%d|%d|",
-					&devices[no].pid,
-					devices[no].name,
-					&devices[no].use_power[1],
-					&devices[no].use_power[2]);
-			devices[no].mode = 0;
-			tprintf("--- Connected equipment info ---\n");
-			tprintf("       Equipment: %s\n", devices[no].name);
-			tprintf("    Normal power: %dW\n", devices[no].use_power[1]);
-			tprintf("     Limit power: %dW\n", devices[no].use_power[2]);
-			tprintf("    Current mode: %s\n", use_mode[devices[no].mode]);
-			tprintf("-----------------------------\n\n");
-			tprintf("System power using: %dW\n", powsys->current_power);
+			if (no < MAX_DEVICE) 
+			{
+				sscanf(got_msg.mtext, "%*c|%d|%[^|]|%d|%d|",
+						&devices[no].pid,
+						devices[no].name,
+						&devices[no].use_power[1],
+						&devices[no].use_power[2]);
+				devices[no].mode = 0;
+				tprintf("--- Connected equipment info ---\n");
+				tprintf("       Equipment: %s\n", devices[no].name);
+				tprintf("    Normal power: %dW\n", devices[no].use_power[1]);
+				tprintf("     Limit power: %dW\n", devices[no].use_power[2]);
+				tprintf("    Current mode: %s\n", use_mode[devices[no].mode]);
+				tprintf("-----------------------------\n\n");
+				tprintf("System power using: %dW\n", powsys->current_power);
 
-			// send message to logWrite
-			msg_t new_msg;
-			new_msg.mtype = 1;
-			sprintf(new_msg.mtext, "s|[%s] connected (Normal use: %dW, Linited use: %dW)|",
-					devices[no].name,
-					devices[no].use_power[1],
-					devices[no].use_power[2]);
-			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
+				// send message to logWrite
+				msg_t new_msg;
+				new_msg.mtype = 1;
+				sprintf(new_msg.mtext, "s|[%s] connected (Normal use: %dW, Linited use: %dW)|",
+						devices[no].name,
+						devices[no].use_power[1],
+						devices[no].use_power[2]);
+				msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
-			sprintf(new_msg.mtext, "s|Device [%s] set mode to [off] ~ using 0W|", devices[no].name);
-			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
+				sprintf(new_msg.mtext, "s|Device [%s] set mode to [off] ~ using 0W|", devices[no].name);
+				msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
+			}
 		}
 
 		// header = 'm' => Change the mode!
-		if (got_msg.mtext[0] == 'm')
+		else if (got_msg.mtext[0] == 'm')
 		{
 			int no, temp_pid, temp_mode;
 
@@ -332,10 +335,10 @@ void powSupplyInfoAccess_handle()
 		}
 
 		// header = 'd' => Disconnect
-		if (got_msg.mtext[0] == 'd')
+		else if (got_msg.mtext[0] == 'd')
 		{
 			int no, temp_pid;
-			sscanf(got_msg.mtext, "%*c|%d|", &temp_pid, &no);
+			sscanf(got_msg.mtext, "%*c|%d|", &temp_pid);
 
 			// send message to logWrite
 			msg_t new_msg;
@@ -350,7 +353,7 @@ void powSupplyInfoAccess_handle()
 			{
 				if (devices[no].pid == temp_pid)
 				{
-					tprintf("%s\n\n", temp);
+					tprintf("Removing equipment at pid: %d\n\n", temp_pid);
 					devices[no].pid = 0;
 					strcpy(devices[no].name, "");
 					devices[no].use_power[0] = 0;
@@ -359,10 +362,10 @@ void powSupplyInfoAccess_handle()
 					devices[no].mode = 0;
 					break;
 				}
-				else
-				{
-					tprintf("Error! Device not found\n\n");
-				}
+			}
+			if (no >= MAX_DEVICE)
+			{
+				tprintf("Error! Device not found\n\n");
 			}
 			sprintf(new_msg.mtext, "s|%s", temp);
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
@@ -469,7 +472,7 @@ void elePowerCtrl_handle()
 			if ((my_child = fork()) == 0)
 			{
 				// in child
-				sleep(5);
+				sleep(1);
 
 				int no;
 				for (no = 0; no < MAX_DEVICE; no++)

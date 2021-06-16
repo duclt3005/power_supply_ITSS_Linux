@@ -4,10 +4,16 @@
 - server
 ```
 gcc -o server server.c
-./server PORT
+./server <PORT>
 ```
 - client
 ```
 gcc -o client client.c
-./client PORT
+./client <PORT>
+```
+- server_2
+```
+cd server_2
+make all
+./server_2 <PORT>
 ```
