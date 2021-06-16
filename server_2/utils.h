@@ -31,6 +31,7 @@
 // power system struct
 typedef struct
 {
+	int powerSupply_count;
 	int current_power;
 	int threshold_over;
 	int supply_over;

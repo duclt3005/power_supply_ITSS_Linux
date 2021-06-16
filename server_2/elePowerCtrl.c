@@ -87,11 +87,14 @@ void elePowerCtrl_handle(
 			int no;
 			for (no = 0; no < MAX_DEVICE; no++)
 			{
+				tprintf("Current number: %d\n\n", no);
 				if (devices[no].mode == 1)
 				{
-					new_msg.mtype = 2;
-					sprintf(new_msg.mtext, "m|%d|2|", devices[no].pid);
-					msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
+					tprintf("Reading %d\n\n", devices[no].pid);
+					msg_t new_mess;
+					new_mess.mtype = 2;
+					sprintf(new_mess.mtext, "m|%d|2|", devices[no].pid);
+					msgsnd(msqid, &new_mess, MAX_MESSAGE_LENGTH, 0);
 				}
 			}
 
@@ -104,11 +107,13 @@ void elePowerCtrl_handle(
 				int no;
 				for (no = 0; no < MAX_DEVICE; no++)
 				{
+					tprintf("Current child number: %d\n\n", no);
 					if (devices[no].mode != 0)
 					{
-						new_msg.mtype = 2;
-						sprintf(new_msg.mtext, "m|%d|0|", devices[no].pid);
-						msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
+						msg_t new_mess;
+						new_mess.mtype = 2;
+						sprintf(new_mess.mtext, "m|%d|0|", devices[no].pid);
+						msgsnd(msqid, &new_mess, MAX_MESSAGE_LENGTH, 0);
 					}
 				}
 				kill(getpid(), SIGKILL);
@@ -126,7 +131,7 @@ void elePowerCtrl_handle(
 					if (powsys->current_power < POWER_THRESHOLD)
 					{
 						powsys->supply_over = 0;
-						tprintf("OK, power now is %d", powsys->current_power);
+						tprintf("OK, power now is %d\n\n", powsys->current_power);
 						kill(my_child, SIGKILL);
 						break;
 					}

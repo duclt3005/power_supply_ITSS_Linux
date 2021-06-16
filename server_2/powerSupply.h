@@ -9,8 +9,6 @@ void powerSupply_handle(
 	int shmid_d,
 	int conn_sock,
 	int bytes_received,
-	char recv_data[],
-	int powerSupply_count,
 	powsys_t *powsys
 );
 
