@@ -119,7 +119,7 @@ void powerSupply_handle(int conn_sock)
 			// send message to powSupplyInfoAccess
 			msg_t new_msg;
 			new_msg.mtype = 2;
-			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DISS
+			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DIS
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
 			powerSupply_count--;
@@ -225,6 +225,7 @@ void connectMng_handle()
 			close(conn_sock);
 			powerSupply_count++;
 			tprintf("A device connected, connectMng forked new process powerSupply --- pid: %d.\n", powerSupply);
+			tprintf("Total product: %d\n", powerSupply_count);
 		}
 	} //end communication
 	close(listen_sock);
@@ -344,7 +345,6 @@ void powSupplyInfoAccess_handle()
 			msg_t new_msg;
 			new_msg.mtype = 1;
 			char temp[MAX_MESSAGE_LENGTH_TEMP];
-
 			// printf("----%d--%d", no, devices[no].pid);
 			// printf("Device %d and %d and  %s disconnected\n", temp_pid, no, devices[no].name);
 			// sprintf(temp, "Device [%s] disconnected", devices[no].name);
@@ -354,6 +354,7 @@ void powSupplyInfoAccess_handle()
 				if (devices[no].pid == temp_pid)
 				{
 					tprintf("Removing equipment at pid: %d\n\n", temp_pid);
+					printf("Remaining device: %d\n", powerSupply_count);
 					devices[no].pid = 0;
 					strcpy(devices[no].name, "");
 					devices[no].use_power[0] = 0;
