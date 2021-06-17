@@ -6,7 +6,6 @@
 
 int server_port;
 pid_t connectMng, powerSupply, elePowerCtrl, powSupplyInfoAccess, logWrite;
-int powerSupply_count = 0;
 int listen_sock, conn_sock;
 char recv_data[BUFF_SIZE];
 int bytes_sent, bytes_received;
@@ -46,6 +45,7 @@ int main(int argc, char const *argv[])
 		tprintf("shmat() failed\n");
 		exit(1);
 	}
+	powsys->powerSupply_count = 0;
 	powsys->current_power = 0;
 	powsys->threshold_over = 0;
 	powsys->supply_over = 0;
@@ -100,14 +100,12 @@ int main(int argc, char const *argv[])
 			msqid,
 			shmid_s,
 			shmid_d,
-			recv_data,
 			listen_sock,
 			conn_sock,
 			server,
 			client,
 			server_port,
 			sin_size,
-			powerSupply_count,
 			bytes_sent,
 			bytes_received,
 			powerSupply,

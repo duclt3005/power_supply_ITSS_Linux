@@ -4,14 +4,12 @@ void connectMng_handle(
 	int msqid,
 	int shmid_s,
 	int shmid_d,
-	char recv_data[],
 	int listen_sock,
 	int conn_sock,
 	struct sockaddr_in server,
 	struct sockaddr_in client,
 	int server_port,
 	int sin_size,
-	int powerSupply_count,
 	int bytes_sent,
 	int bytes_received,
 	pid_t powerSupply,
@@ -25,6 +23,15 @@ void connectMng_handle(
 	if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		tprintf("socket() failed\n");
+		exit(1);
+	}
+
+	//////////////////////////////
+	// Connect to shared memory //
+	//////////////////////////////
+	if ((powsys = (powsys_t *)shmat(shmid_s, (void *)0, 0)) == (void *)-1)
+	{
+		tprintf("shmat() failed\n");
 		exit(1);
 	}
 
@@ -58,7 +65,7 @@ void connectMng_handle(
 		}
 
 		// if 11-th device connect to SERVER
-		if (powerSupply_count == MAX_DEVICE)
+		if (powsys->powerSupply_count == MAX_DEVICE)
 		{
 			char re = '9';
 			if ((bytes_sent = send(conn_sock, &re, 1, 0)) <= 0)
@@ -84,8 +91,6 @@ void connectMng_handle(
 				shmid_d,
 				conn_sock,
 				bytes_received,
-				recv_data,
-				powerSupply_count,
 				powsys
 			);
 			close(conn_sock);
@@ -94,7 +99,7 @@ void connectMng_handle(
 		{
 			//in parent
 			close(conn_sock);
-			powerSupply_count++;
+			powsys->powerSupply_count++;
 			tprintf("A device connected, connectMng forked new process powerSupply --- pid: %d.\n", powerSupply);
 		}
 	} //end communication

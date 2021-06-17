@@ -7,13 +7,12 @@ void powerSupply_handle(
 	int shmid_d,
 	int conn_sock,
 	int bytes_received,
-	char recv_data[],
-	int powerSupply_count,
 	powsys_t *powsys
 	)
 {
 	// check if this is first time client sent
 	int is_first_message = 1;
+	char recv_data[BUFF_SIZE];
 	//////////////////////////////
 	// Connect to shared memory //
 	//////////////////////////////
@@ -38,7 +37,7 @@ void powerSupply_handle(
 			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DISS
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
-			powerSupply_count--;
+			powsys->powerSupply_count--;
 			// kill this process
 			kill(getpid(), SIGKILL);
 			break;

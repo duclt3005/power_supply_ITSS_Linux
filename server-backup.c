@@ -30,7 +30,9 @@
 ////////////////////
 int server_port;
 pid_t connectMng, powerSupply, elePowerCtrl, powSupplyInfoAccess, logWrite;
+int powerSupply_count = 0;
 int listen_sock, conn_sock;
+char recv_data[BUFF_SIZE];
 int bytes_sent, bytes_received;
 struct sockaddr_in server;
 struct sockaddr_in client;
@@ -43,7 +45,6 @@ FILE *log_server;
 // power system struct
 typedef struct
 {
-	int powerSupply_count;
 	int current_power;
 	int threshold_over;
 	int supply_over;
@@ -97,7 +98,6 @@ void powerSupply_handle(int conn_sock)
 {
 	// check if this is first time client sent
 	int is_first_message = 1;
-	char recv_data[BUFF_SIZE];
 	//////////////////////////////
 	// Connect to shared memory //
 	//////////////////////////////
@@ -119,10 +119,10 @@ void powerSupply_handle(int conn_sock)
 			// send message to powSupplyInfoAccess
 			msg_t new_msg;
 			new_msg.mtype = 2;
-			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DIS
+			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DISS
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
-			powsys->powerSupply_count--;
+			powerSupply_count--;
 			// kill this process
 			kill(getpid(), SIGKILL);
 			break;
@@ -166,15 +166,6 @@ void connectMng_handle()
 		exit(1);
 	}
 
-	//////////////////////////////
-	// Connect to shared memory //
-	//////////////////////////////
-	if ((powsys = (powsys_t *)shmat(shmid_s, (void *)0, 0)) == (void *)-1)
-	{
-		tprintf("shmat() failed\n");
-		exit(1);
-	}
-
 	//Step 2: Bind address to socket
 	bzero(&server, sizeof(server));
 	server.sin_family = AF_INET;
@@ -205,7 +196,7 @@ void connectMng_handle()
 		}
 
 		// if 11-th device connect to SERVER
-		if (powsys->powerSupply_count == MAX_DEVICE)
+		if (powerSupply_count == MAX_DEVICE)
 		{
 			char re = '9';
 			if ((bytes_sent = send(conn_sock, &re, 1, 0)) <= 0)
@@ -232,9 +223,8 @@ void connectMng_handle()
 		{
 			//in parent
 			close(conn_sock);
-			powsys->powerSupply_count++;
+			powerSupply_count++;
 			tprintf("A device connected, connectMng forked new process powerSupply --- pid: %d.\n", powerSupply);
-			tprintf("Total product: %d\n", powerSupply_count);
 		}
 	} //end communication
 	close(listen_sock);
@@ -354,6 +344,7 @@ void powSupplyInfoAccess_handle()
 			msg_t new_msg;
 			new_msg.mtype = 1;
 			char temp[MAX_MESSAGE_LENGTH_TEMP];
+
 			// printf("----%d--%d", no, devices[no].pid);
 			// printf("Device %d and %d and  %s disconnected\n", temp_pid, no, devices[no].name);
 			// sprintf(temp, "Device [%s] disconnected", devices[no].name);
@@ -363,7 +354,6 @@ void powSupplyInfoAccess_handle()
 				if (devices[no].pid == temp_pid)
 				{
 					tprintf("Removing equipment at pid: %d\n\n", temp_pid);
-					printf("Remaining device: %d\n", powerSupply_count);
 					devices[no].pid = 0;
 					strcpy(devices[no].name, "");
 					devices[no].use_power[0] = 0;
@@ -509,7 +499,7 @@ void elePowerCtrl_handle()
 					if (powsys->current_power < POWER_THRESHOLD)
 					{
 						powsys->supply_over = 0;
-						tprintf("OK, power now is %d\n\n", powsys->current_power);
+						tprintf("OK, power now is %d", powsys->current_power);
 						kill(my_child, SIGKILL);
 						break;
 					}
@@ -599,7 +589,6 @@ int main(int argc, char const *argv[])
 		tprintf("shmat() failed\n");
 		exit(1);
 	}
-	powsys->powerSupply_count = 0;
 	powsys->current_power = 0;
 	powsys->threshold_over = 0;
 	powsys->supply_over = 0;
