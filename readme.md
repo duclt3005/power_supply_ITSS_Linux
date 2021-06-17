@@ -1,6 +1,7 @@
 # ITSS Embbed Linux
 
 ## How to run
+- Before running create an empty folder log to store log files
 - server
 ```
 gcc -o server server.c

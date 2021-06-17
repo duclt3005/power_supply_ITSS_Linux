@@ -22,8 +22,8 @@
 #define BUFF_SIZE 8192
 #define MAX_DEVICE 10
 #define MAX_LOG_DEVICE 100
-#define MAX_MESSAGE_LENGTH 1000
-#define MAX_MESSAGE_LENGTH_TEMP 1000
+#define MAX_MESSAGE_LENGTH 100
+#define MAX_MESSAGE_LENGTH_TEMP 100
 
 ////////////////////
 // Variables list //

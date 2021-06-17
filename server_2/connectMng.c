@@ -9,7 +9,7 @@ void connectMng_handle(
 	struct sockaddr_in server,
 	struct sockaddr_in client,
 	int server_port,
-	int sin_size,
+	unsigned int sin_size,
 	int bytes_sent,
 	int bytes_received,
 	pid_t powerSupply,

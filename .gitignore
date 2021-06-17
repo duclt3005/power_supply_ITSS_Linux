@@ -1,0 +1,5 @@
+# Logs
+log/*
+
+# vscode setting
+.vscode/*

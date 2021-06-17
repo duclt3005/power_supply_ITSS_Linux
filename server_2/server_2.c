@@ -11,7 +11,7 @@ char recv_data[BUFF_SIZE];
 int bytes_sent, bytes_received;
 struct sockaddr_in server;
 struct sockaddr_in client;
-int sin_size;
+unsigned int sin_size;
 char use_mode[][10] = {"off", "normal", "limited"};
 key_t key_s = 8888, key_d = 1234, key_m = 5678; //system info, device storage, message queue
 int shmid_s, shmid_d, msqid;					//system info, device storage, message queue
