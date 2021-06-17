@@ -234,7 +234,6 @@ void connectMng_handle()
 			close(conn_sock);
 			powsys->powerSupply_count++;
 			tprintf("A device connected, connectMng forked new process powerSupply --- pid: %d.\n", powerSupply);
-			tprintf("Total product: %d\n", powerSupply_count);
 		}
 	} //end communication
 	close(listen_sock);
@@ -363,7 +362,6 @@ void powSupplyInfoAccess_handle()
 				if (devices[no].pid == temp_pid)
 				{
 					tprintf("Removing equipment at pid: %d\n\n", temp_pid);
-					printf("Remaining device: %d\n", powerSupply_count);
 					devices[no].pid = 0;
 					strcpy(devices[no].name, "");
 					devices[no].use_power[0] = 0;
