@@ -28,14 +28,6 @@
 ////////////////////
 // Variables list //
 ////////////////////
-int server_port;
-pid_t connectMng, powerSupply, elePowerCtrl, powSupplyInfoAccess, logWrite;
-int listen_sock, conn_sock;
-int bytes_sent, bytes_received;
-struct sockaddr_in server;
-struct sockaddr_in client;
-int sin_size;
-char use_mode[][10] = {"off", "normal", "limited"};
 key_t key_s = 8888, key_d = 1234, key_m = 5678; //system info, device storage, message queue
 int shmid_s, shmid_d, msqid;					//system info, device storage, message queue
 FILE *log_server;
@@ -112,7 +104,7 @@ void powerSupply_handle(int conn_sock)
 		///////////////////
 		// listen on tcp //
 		///////////////////
-		bytes_received = recv(conn_sock, recv_data, BUFF_SIZE - 1, 0);
+		int bytes_received = recv(conn_sock, recv_data, BUFF_SIZE - 1, 0);
 		if (bytes_received <= 0)
 		{
 			// if DISCONNECT
@@ -154,12 +146,13 @@ void powerSupply_handle(int conn_sock)
 	} // endwhile
 } // end function powerSupply_handle
 
-void connectMng_handle()
+void connectMng_handle(int server_port)
 {
 	///////////////////////
 	// Connect to client //
 	///////////////////////
 	//Step 1: Construct a TCP socket to listen connection request
+	int listen_sock, conn_sock;
 	if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		tprintf("socket() failed\n");
@@ -176,6 +169,8 @@ void connectMng_handle()
 	}
 
 	//Step 2: Bind address to socket
+	struct sockaddr_in server;
+	struct sockaddr_in client;
 	bzero(&server, sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(server_port);
@@ -197,7 +192,7 @@ void connectMng_handle()
 	while (1)
 	{
 		//accept request
-		sin_size = sizeof(struct sockaddr_in);
+		int sin_size = sizeof(struct sockaddr_in);
 		if ((conn_sock = accept(listen_sock, (struct sockaddr *)&client, &sin_size)) == -1)
 		{
 			tprintf("accept() failed\n");
@@ -208,6 +203,7 @@ void connectMng_handle()
 		if (powsys->powerSupply_count == MAX_DEVICE)
 		{
 			char re = '9';
+			int bytes_sent;
 			if ((bytes_sent = send(conn_sock, &re, 1, 0)) <= 0)
 				tprintf("send() failed\n");
 			close(conn_sock);
@@ -215,6 +211,7 @@ void connectMng_handle()
 		}
 
 		// create new process powerSupply
+		pid_t powerSupply;
 		if ((powerSupply = fork()) < 0)
 		{
 			tprintf("powerSupply fork() failed\n");
@@ -243,7 +240,7 @@ void powSupplyInfoAccess_handle()
 {
 	// mtype = 2
 	msg_t got_msg;
-
+	char use_mode[][10] = {"off", "normal", "limited"};
 	//////////////////////////////
 	// Connect to shared memory //
 	//////////////////////////////
@@ -581,7 +578,7 @@ int main(int argc, char const *argv[])
 		fprintf(stderr, "Usage:  %s <Server Port>\n", argv[0]);
 		exit(1);
 	}
-	server_port = atoi(argv[1]);
+	int server_port = atoi(argv[1]);
 	printf("SERVER start, PID is %d.\n", getpid());
 
 	///////////////////////////////////////////
@@ -646,9 +643,10 @@ int main(int argc, char const *argv[])
 	///////////////////////////////////
 	// start child process in SERVER //
 	///////////////////////////////////
+	pid_t connectMng, elePowerCtrl, powSupplyInfoAccess, logWrite;
 	if ((connectMng = fork()) == 0)
 	{
-		connectMng_handle();
+		connectMng_handle(server_port);
 	}
 	else if ((elePowerCtrl = fork()) == 0)
 	{

@@ -3,12 +3,6 @@
 
 #include "utils.h"
 
-void elePowerCtrl_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	device_t *devices,
-	powsys_t *powsys
-);
+void elePowerCtrl_handle(device_t *devices, powsys_t *powsys, int shmid_d, int shmid_s, int msqid);
 
 #endif

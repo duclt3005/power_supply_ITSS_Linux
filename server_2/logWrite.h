@@ -3,13 +3,6 @@
 
 #include "utils.h"
 
-void logWrite_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	device_t *devices,
-	powsys_t *powsys,
-	FILE *log_server
-);
+void logWrite_handle(device_t * devices, powsys_t *powsys, int shmid_d, int shmid_s, int msqid, FILE *log_server);
 
 #endif
