@@ -1,0 +1,43 @@
+#include "logWrite.h"
+
+void logWrite_handle(int msqid, FILE **log_server)
+{
+	// mtype == 1
+	msg_t got_msg;
+
+	///////////////////////////
+	// Create sever log file //
+	///////////////////////////
+	char file_name[255];
+	time_t t = time(NULL);
+	struct tm *now = localtime(&t);
+	strftime(file_name, sizeof(file_name), "log/server_%Y-%m-%d_%H:%M:%S.txt", now);
+	*log_server = fopen(file_name, "w");
+	tprintf("Log server started, file is %s\n", file_name);
+
+	///////////////////////////////
+	// Listen to other processes //
+	///////////////////////////////
+	while (1)
+	{
+		// got mail!
+		if (msgrcv(msqid, &got_msg, MAX_MESSAGE_LENGTH, 1, 0) == -1)
+		{
+			tprintf("msgrcv() error");
+			exit(1);
+		}
+
+		// header = 's' => Write log to server
+		if (got_msg.mtext[0] == 's')
+		{
+			char buff[MAX_MESSAGE_LENGTH];
+			//extract from message
+			sscanf(got_msg.mtext, "%*2c%[^|]|", buff);
+			// get time now
+			char log_time[50];
+			strftime(log_time, sizeof(log_time), "%Y/%m/%d_%H:%M:%S", now);
+			// write log
+			fprintf(*log_server, "%s | %s\n", log_time, buff);
+		}
+	}
+} //end function logWrite_handle
