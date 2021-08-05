@@ -1,12 +1,6 @@
 #include "elePowerCtrl.h"
 
-void elePowerCtrl_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	device_t *devices,
-	powsys_t *powsys
-	)
+void elePowerCtrl_handle(device_t *devices, powsys_t *powsys, int shmid_d, int shmid_s, int msqid)
 {
 	//////////////////////////////
 	// Connect to shared memory //
@@ -87,14 +81,11 @@ void elePowerCtrl_handle(
 			int no;
 			for (no = 0; no < MAX_DEVICE; no++)
 			{
-				tprintf("Current number: %d\n\n", no);
 				if (devices[no].mode == 1)
 				{
-					tprintf("Reading %d\n\n", devices[no].pid);
-					msg_t new_mess;
-					new_mess.mtype = 2;
-					sprintf(new_mess.mtext, "m|%d|2|", devices[no].pid);
-					msgsnd(msqid, &new_mess, MAX_MESSAGE_LENGTH, 0);
+					new_msg.mtype = 2;
+					sprintf(new_msg.mtext, "m|%d|2|", devices[no].pid);
+					msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 				}
 			}
 
@@ -107,13 +98,11 @@ void elePowerCtrl_handle(
 				int no;
 				for (no = 0; no < MAX_DEVICE; no++)
 				{
-					tprintf("Current child number: %d\n\n", no);
 					if (devices[no].mode != 0)
 					{
-						msg_t new_mess;
-						new_mess.mtype = 2;
-						sprintf(new_mess.mtext, "m|%d|0|", devices[no].pid);
-						msgsnd(msqid, &new_mess, MAX_MESSAGE_LENGTH, 0);
+						new_msg.mtype = 2;
+						sprintf(new_msg.mtext, "m|%d|0|", devices[no].pid);
+						msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 					}
 				}
 				kill(getpid(), SIGKILL);

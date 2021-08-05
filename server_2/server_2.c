@@ -4,15 +4,6 @@
 #include "powerSupply.h"
 #include "logWrite.h"
 
-int server_port;
-pid_t connectMng, powerSupply, elePowerCtrl, powSupplyInfoAccess, logWrite;
-int listen_sock, conn_sock;
-char recv_data[BUFF_SIZE];
-int bytes_sent, bytes_received;
-struct sockaddr_in server;
-struct sockaddr_in client;
-int sin_size;
-char use_mode[][10] = {"off", "normal", "limited"};
 key_t key_s = 8888, key_d = 1234, key_m = 5678; //system info, device storage, message queue
 int shmid_s, shmid_d, msqid;					//system info, device storage, message queue
 FILE *log_server;
@@ -29,7 +20,7 @@ int main(int argc, char const *argv[])
 		fprintf(stderr, "Usage:  %s <Server Port>\n", argv[0]);
 		exit(1);
 	}
-	server_port = atoi(argv[1]);
+	int server_port = atoi(argv[1]);
 	printf("SERVER start, PID is %d.\n", getpid());
 
 	///////////////////////////////////////////
@@ -94,55 +85,22 @@ int main(int argc, char const *argv[])
 	///////////////////////////////////
 	// start child process in SERVER //
 	///////////////////////////////////
+	pid_t connectMng, elePowerCtrl, powSupplyInfoAccess, logWrite;
 	if ((connectMng = fork()) == 0)
 	{
-		connectMng_handle(
-			msqid,
-			shmid_s,
-			shmid_d,
-			listen_sock,
-			conn_sock,
-			server,
-			client,
-			server_port,
-			sin_size,
-			bytes_sent,
-			bytes_received,
-			powerSupply,
-			powsys
-		);
+		connectMng_handle(server_port, powsys, shmid_s, msqid);
 	}
 	else if ((elePowerCtrl = fork()) == 0)
 	{
-		elePowerCtrl_handle(
-			msqid,
-			shmid_s,
-			shmid_d,
-			devices,
-			powsys
-		);
+		elePowerCtrl_handle(devices, powsys, shmid_d, shmid_s, msqid);
 	}
 	else if ((powSupplyInfoAccess = fork()) == 0)
 	{
-		powSupplyInfoAccess_handle(
-			msqid,
-			shmid_s,
-			shmid_d,
-			use_mode,
-			devices,
-			powsys
-		);
+		powSupplyInfoAccess_handle(devices, powsys, shmid_d, shmid_s, msqid);
 	}
 	else if ((logWrite = fork()) == 0)
 	{
-		logWrite_handle(
-			msqid,
-			shmid_s,
-			shmid_d,
-			devices,
-			powsys,
-			log_server
-		);
+		logWrite_handle(devices, powsys, shmid_d, shmid_s, msqid, log_server);
 	}
 	else
 	{

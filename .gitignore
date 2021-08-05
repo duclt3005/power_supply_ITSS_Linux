@@ -1,2 +1,7 @@
 client
 server
+# Logs
+log/*
+
+# vscode setting
+.vscode/*

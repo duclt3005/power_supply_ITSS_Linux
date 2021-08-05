@@ -1,25 +1,12 @@
 #include "connectMng.h"
 
-void connectMng_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	int listen_sock,
-	int conn_sock,
-	struct sockaddr_in server,
-	struct sockaddr_in client,
-	int server_port,
-	int sin_size,
-	int bytes_sent,
-	int bytes_received,
-	pid_t powerSupply,
-	powsys_t *powsys
-	)
+void connectMng_handle(int server_port, powsys_t *powsys, int shmid_s, int msqid)
 {
 	///////////////////////
 	// Connect to client //
 	///////////////////////
 	//Step 1: Construct a TCP socket to listen connection request
+	int listen_sock, conn_sock;
 	if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		tprintf("socket() failed\n");
@@ -36,6 +23,8 @@ void connectMng_handle(
 	}
 
 	//Step 2: Bind address to socket
+	struct sockaddr_in server;
+	struct sockaddr_in client;
 	bzero(&server, sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(server_port);
@@ -57,7 +46,7 @@ void connectMng_handle(
 	while (1)
 	{
 		//accept request
-		sin_size = sizeof(struct sockaddr_in);
+		socklen_t sin_size = sizeof(struct sockaddr_in);
 		if ((conn_sock = accept(listen_sock, (struct sockaddr *)&client, &sin_size)) == -1)
 		{
 			tprintf("accept() failed\n");
@@ -68,6 +57,7 @@ void connectMng_handle(
 		if (powsys->powerSupply_count == MAX_DEVICE)
 		{
 			char re = '9';
+			int bytes_sent;
 			if ((bytes_sent = send(conn_sock, &re, 1, 0)) <= 0)
 				tprintf("send() failed\n");
 			close(conn_sock);
@@ -75,6 +65,7 @@ void connectMng_handle(
 		}
 
 		// create new process powerSupply
+		pid_t powerSupply;
 		if ((powerSupply = fork()) < 0)
 		{
 			tprintf("powerSupply fork() failed\n");
@@ -85,14 +76,7 @@ void connectMng_handle(
 		{
 			//in child
 			close(listen_sock);
-			powerSupply_handle(
-				msqid,
-				shmid_s,
-				shmid_d,
-				conn_sock,
-				bytes_received,
-				powsys
-			);
+			powerSupply_handle(conn_sock, powsys, shmid_s, msqid);
 			close(conn_sock);
 		}
 		else

@@ -1,14 +1,7 @@
 #include "powerSupply.h"
 
 
-void powerSupply_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	int conn_sock,
-	int bytes_received,
-	powsys_t *powsys
-	)
+void powerSupply_handle(int conn_sock, powsys_t *powsys, int shmid_s, int msqid)
 {
 	// check if this is first time client sent
 	int is_first_message = 1;
@@ -27,14 +20,14 @@ void powerSupply_handle(
 		///////////////////
 		// listen on tcp //
 		///////////////////
-		bytes_received = recv(conn_sock, recv_data, BUFF_SIZE - 1, 0);
+		int bytes_received = recv(conn_sock, recv_data, BUFF_SIZE - 1, 0);
 		if (bytes_received <= 0)
 		{
 			// if DISCONNECT
 			// send message to powSupplyInfoAccess
 			msg_t new_msg;
 			new_msg.mtype = 2;
-			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DISS
+			sprintf(new_msg.mtext, "d|%d|", getpid()); // d for DIS
 			msgsnd(msqid, &new_msg, MAX_MESSAGE_LENGTH, 0);
 
 			powsys->powerSupply_count--;
@@ -69,18 +62,11 @@ void powerSupply_handle(
 	} // endwhile
 } // end function powerSupply_handle
 
-void powSupplyInfoAccess_handle(
-	int msqid,
-	int shmid_s,
-	int shmid_d,
-	char use_mode[][10],
-	device_t *devices,
-	powsys_t *powsys
-	)
+void powSupplyInfoAccess_handle(device_t *devices, powsys_t *powsys, int shmid_d, int shmid_s, int msqid)
 {
 	// mtype = 2
 	msg_t got_msg;
-
+	char use_mode[][10] = {"off", "normal", "limited"};
 	//////////////////////////////
 	// Connect to shared memory //
 	//////////////////////////////
@@ -190,7 +176,6 @@ void powSupplyInfoAccess_handle(
 			msg_t new_msg;
 			new_msg.mtype = 1;
 			char temp[MAX_MESSAGE_LENGTH_TEMP];
-
 			// printf("----%d--%d", no, devices[no].pid);
 			// printf("Device %d and %d and  %s disconnected\n", temp_pid, no, devices[no].name);
 			// sprintf(temp, "Device [%s] disconnected", devices[no].name);
